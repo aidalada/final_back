@@ -1,57 +1,432 @@
-# Assignment 4: Secure Project Management System with MVC Architecture
+# Project Management System - Final Project
 
-## Project Overview
+A full-stack project management application built with Node.js, Express, MongoDB, and vanilla JavaScript. Features JWT authentication, Role-Based Access Control (RBAC), Kanban board, todo lists, analytics dashboard, and a modern dark-themed UI.
 
-This project is an evolution of my previous work. The main goal for this assignment was to refactor a simple backend application into a professional, scalable architecture. I moved away from a monolithic single-file structure to a modular Model-View-Controller (MVC) pattern. Additionally, I implemented robust security measures, including password hashing and Role-Based Access Control (RBAC), to differentiate between regular users and administrators.
+## 🌟 Features
 
-## Architectural Choices (MVC Refactoring)
+### Core Functionality
+- **User Authentication**: JWT-based login/registration system
+- **Role-Based Access Control (RBAC)**: Admin and User roles with different permissions
+- **Project Management**: Full CRUD operations for projects
+- **Category Management**: Organize projects by categories (Admin only)
+- **Kanban Board**: Drag-and-drop project status management (Admin only)
+- **Todo Lists**: Task management within each project with automatic progress calculation
+- **Comments System**: Users can comment on projects
+- **Analytics Dashboard**: Visual charts showing budget distribution and project statuses
+- **My Projects**: Users can view and manage only their own projects
 
-In the previous assignment, all the logic was contained within `server.js`. As the application grew, this became difficult to maintain. For this version, I separated the concerns into distinct directories:
+### Advanced Features
+- **Automatic Status Calculation**: Project status updates automatically based on todo completion
+- **Progress Tracking**: Visual progress bars based on completed todos
+- **Deadline Alerts**: Projects with deadlines within 24 hours are highlighted
+- **Responsive Design**: Works seamlessly on desktop and mobile devices
+- **Modern UI**: Dark theme with gradient backgrounds
 
-**Models:** I created Mongoose schemas in the `models/` directory. This keeps the data definitions separate from the business logic.
-**Controllers:** All the functional logic, such as creating a project or deleting a category, was moved to the `controllers/` directory. This makes the code reusable and easier to test.
-**Routes:** The API endpoints are defined in the `routes/` directory. These files map specific URLs (like `/projects`) to the corresponding functions in the controllers.
-**Middleware:** I created a `middleware/` folder to handle authentication checks. This ensures that security logic is not mixed with the core business logic.
+## 🏗️ Architecture
 
-This structure allows the project to scale easily. If I need to add new features later, I know exactly where each piece of code belongs.
+The project follows **MVC (Model-View-Controller)** architecture:
 
-## Database Design and Related Objects
+```
+backend_4/
+├── models/          # Mongoose schemas (User, Project, Category)
+├── controllers/     # Business logic (authController, projectController, categoryController)
+├── routes/          # API endpoints (authRoutes, projectRoutes, categoryRoutes)
+├── middleware/      # Authentication & authorization middleware
+├── public/          # Frontend (index.html - Single Page Application)
+└── server.js        # Express server entry point
+```
 
-To demonstrate relationships between data, I implemented two primary objects: **Projects** and **Categories**.
+## 📋 Prerequisites
 
-The **Category** object represents a grouping, such as "IT", "Marketing", or "Design". It has a name and a unique ID.
-The **Project** object holds the main data, such as title, description, and budget.
+- **Node.js** (v14 or higher)
+- **MongoDB** (local or MongoDB Atlas)
+- **npm** or **yarn**
 
-I created a relationship between them by adding a reference in the Project schema. Each project stores the ObjectId of a Category. On the frontend, when fetching projects, the backend automatically "populates" this field so the user sees the actual category name instead of just an ID code. This fulfills the requirement for multi-object CRUD operations.
+## 🚀 Local Setup
 
-## Security Implementation
+### 1. Clone the Repository
 
-Security was a major focus of this assignment. I implemented a User model that includes an email, a password, and a role.
+```bash
+git clone <your-repository-url>
+cd backend_4
+```
 
-**Password Hashing:**
-I used the `bcryptjs` library to secure user passwords. I set up a pre-save hook in the User model that automatically hashes the password before it is stored in the MongoDB database. This ensures that even if the database is compromised, the actual passwords remain safe.
+### 2. Install Dependencies
 
-**Authentication (JWT):**
-For logging in, I implemented JSON Web Tokens (JWT). When a user successfully logs in, the server generates a signed token containing their User ID and Role. The client (browser) must send this token in the headers of subsequent requests to prove their identity.
+```bash
+npm install
+```
 
-## Role-Based Access Control (RBAC)
+### 3. Environment Variables
 
-I implemented a strict permission system using custom middleware functions called `authenticate` and `authorizeAdmin`.
+Create a `.env` file in the root directory:
 
-**Public Access:** Anyone can view the list of projects and categories (GET requests).
-**Protected Access:** Operations that modify data (POST, PUT, DELETE) are protected.
-**Admin Privileges:** I distinguished between "user" and "admin" roles. Regular users can log in to view content, but they cannot modify it. If a regular user tries to create or delete a project, the middleware checks their role inside the token and rejects the request with a 403 Forbidden error. Only users with the "admin" role are allowed to execute these changes.
+```env
+MONGODB_URI=mongodb://localhost:27017/project-management
+# OR for MongoDB Atlas:
+# MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/dbname
 
-## Setup and Installation
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+PORT=3000
+```
 
-To run this project locally, you need to have Node.js and MongoDB installed.
+**Important**: Never commit `.env` file to version control. Use `.env.example` as a template.
 
-1. Clone the repository to your local machine.
-2. Open your terminal in the project folder and run `npm install` to download the dependencies (express, mongoose, bcryptjs, jsonwebtoken, cors, dotenv).
-3. Create a `.env` file in the root directory. You will need to define your `MONGODB_URI` connection string and a `JWT_SECRET` key for signing tokens.
-4. Run the server using `npm run dev` or `node server.js`.
-5. Open `http://localhost:3000` in your browser to use the interface.
+### 4. Run the Application
 
-## API Usage
+**Development mode** (with auto-reload):
+```bash
+npm run dev
+```
 
-I have included a Postman collection in the submission to demonstrate the API testing. You will see that requests to create or delete items fail when using a standard user token but succeed when using an admin token. The frontend handles this gracefully by hiding or showing elements based on the logged-in user's role.
+**Production mode**:
+```bash
+npm start
+```
+
+### 5. Access the Application
+
+Open your browser and navigate to:
+```
+http://localhost:3000
+```
+
+## 🔐 User Roles & Permissions
+
+### Admin
+- ✅ Create, update, and delete **all** projects
+- ✅ Create and delete categories
+- ✅ Change project status via Kanban board (drag-and-drop)
+- ✅ Assign users to projects
+- ✅ View all projects and analytics
+
+### User
+- ✅ Create projects (becomes the owner)
+- ✅ Update and delete **only their own** projects
+- ✅ Add todos and comments to **any** project
+- ✅ View all projects (read-only for others' projects)
+- ✅ View analytics
+- ❌ Cannot manage categories
+- ❌ Cannot change project status via Kanban
+- ❌ Cannot assign users to projects
+
+## 📡 API Documentation
+
+### Base URL
+```
+http://localhost:3000
+```
+
+### Authentication Endpoints
+
+#### Register User
+```http
+POST /auth/register
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "password123",
+  "role": "user" | "admin"
+}
+```
+
+#### Login
+```http
+POST /auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+
+Response:
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+**Note**: Include the token in subsequent requests:
+```http
+Authorization: Bearer <your-token>
+```
+
+### Project Endpoints
+
+#### Get All Projects
+```http
+GET /projects
+```
+**Access**: Public
+
+#### Get Project by ID
+```http
+GET /projects/:id
+```
+**Access**: Public
+
+#### Create Project
+```http
+POST /projects
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "title": "Project Title",
+  "description": "Project description",
+  "budget": 10000,
+  "category": "category-id" | null,
+  "deadline": "2026-12-31" | null
+}
+```
+**Access**: Authenticated (project owner = current user)
+
+#### Update Project
+```http
+PUT /projects/:id
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "title": "Updated Title",
+  "description": "Updated description",
+  "budget": 15000,
+  "category": "category-id" | null,
+  "deadline": "2026-12-31" | null
+}
+```
+**Access**: Project owner or Admin
+
+#### Delete Project
+```http
+DELETE /projects/:id
+Authorization: Bearer <token>
+```
+**Access**: Project owner or Admin
+
+#### Update Project Status (Kanban)
+```http
+PATCH /projects/:id/status
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "status": "backlog" | "in_progress" | "review" | "done"
+}
+```
+**Access**: Admin only
+
+#### Assign Users to Project
+```http
+PATCH /projects/:id/assign
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "userIds": ["user-id-1", "user-id-2"]
+}
+```
+**Access**: Admin only
+
+#### Get Analytics Summary
+```http
+GET /projects/analytics/summary
+```
+**Access**: Public
+
+### Todo Endpoints
+
+#### Add Todo to Project
+```http
+POST /projects/:id/todos
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "text": "Task description"
+}
+```
+**Access**: Authenticated (can add to any project)
+
+#### Update Todo
+```http
+PATCH /projects/:id/todos/:todoId
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "done": true | false,
+  "text": "Updated task text" (optional)
+}
+```
+**Access**: Project owner or Admin (can only modify todos in projects they own/manage)
+
+#### Delete Todo
+```http
+DELETE /projects/:id/todos/:todoId
+Authorization: Bearer <token>
+```
+**Access**: Project owner or Admin
+
+### Comment Endpoints
+
+#### Add Comment to Project
+```http
+POST /projects/:id/comments
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "text": "Comment text"
+}
+```
+**Access**: Authenticated
+
+#### Get Project Comments
+```http
+GET /projects/:id/comments
+Authorization: Bearer <token>
+```
+**Access**: Authenticated
+
+### Category Endpoints
+
+#### Get All Categories
+```http
+GET /categories
+```
+**Access**: Public
+
+#### Create Category
+```http
+POST /categories
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "name": "Category Name",
+  "description": "Optional description"
+}
+```
+**Access**: Admin only
+
+#### Delete Category
+```http
+DELETE /categories/:id
+Authorization: Bearer <token>
+```
+**Access**: Admin only
+
+## 🌐 Deployment
+
+### Deploy to Render
+
+1. **Create a Render Account**
+   - Go to [render.com](https://render.com) and sign up
+
+2. **Create a New Web Service**
+   - Click "New +" → "Web Service"
+   - Connect your GitHub repository
+   - Select the repository and branch
+
+3. **Configure Build Settings**
+   - **Build Command**: `npm install`
+   - **Start Command**: `npm start`
+   - **Environment**: Node
+
+4. **Set Environment Variables**
+   In Render dashboard → Environment:
+   ```
+   MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/dbname
+   JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+   PORT=10000
+   ```
+   **Note**: Render automatically sets `PORT`, but you can override it.
+
+5. **Deploy**
+   - Click "Create Web Service"
+   - Render will build and deploy your application
+   - Your app will be available at `https://your-app-name.onrender.com`
+
+### MongoDB Atlas Setup (for Production)
+
+1. **Create MongoDB Atlas Account**
+   - Go to [mongodb.com/cloud/atlas](https://www.mongodb.com/cloud/atlas)
+   - Create a free cluster
+
+2. **Get Connection String**
+   - Click "Connect" → "Connect your application"
+   - Copy the connection string
+   - Replace `<password>` with your database password
+   - Replace `<dbname>` with your database name
+
+3. **Update Environment Variables**
+   - Use the Atlas connection string as `MONGODB_URI` in Render
+
+### Frontend Deployment
+
+Since the frontend is integrated (served via `express.static('public')`), it will be deployed automatically with the backend on Render. No separate deployment needed.
+
+## 📦 Project Structure
+
+```
+backend_4/
+├── controllers/
+│   ├── authController.js      # Authentication logic
+│   ├── categoryController.js   # Category CRUD operations
+│   └── projectController.js    # Project CRUD, todos, comments, analytics
+├── middleware/
+│   └── authMiddleware.js       # JWT verification & RBAC
+├── models/
+│   ├── User.js                # User schema (email, password, role)
+│   ├── Project.js             # Project schema (with todos, comments)
+│   └── Category.js            # Category schema
+├── routes/
+│   ├── authRoutes.js          # /auth endpoints
+│   ├── projectRoutes.js       # /projects endpoints
+│   └── categoryRoutes.js      # /categories endpoints
+├── public/
+│   └── index.html             # Single Page Application (SPA)
+├── .env.example               # Environment variables template
+├── .gitignore                 # Git ignore rules
+├── package.json               # Dependencies and scripts
+├── server.js                  # Express server entry point
+└── README.md                  # This file
+```
+
+## 🧪 Testing with Postman
+
+A Postman collection is included in the repository (`postman_collection.json`). Import it into Postman to test all endpoints.
+
+**Steps**:
+1. Open Postman
+2. Click "Import" → "File"
+3. Select `postman_collection.json`
+4. Set environment variables:
+   - `base_url`: `http://localhost:3000` (or your Render URL)
+   - `token`: (will be set automatically after login)
+
+## 🔒 Security Features
+
+- **Password Hashing**: bcryptjs with salt rounds
+- **JWT Tokens**: Secure token-based authentication
+- **RBAC**: Role-based access control for sensitive operations
+- **Input Validation**: Mongoose schema validation
+- **CORS**: Configured for cross-origin requests
+- **Environment Variables**: Sensitive data stored in `.env`
+
+## 📝 License
+
+ISC
+
+## 👤 Author
+
+Your Name
+
+## 🙏 Acknowledgments
+
+- Express.js
+- MongoDB & Mongoose
+- Chart.js (for analytics)
+- Tailwind CSS (via CDN)
