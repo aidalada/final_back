@@ -3,44 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project Management System (Assignment 4)</title>
+    <title>Project Management System - Final Project</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .hidden { display: none; }
-        /* Плавная прокрутка для списка категорий */
         #categoriesList::-webkit-scrollbar { width: 6px; }
         #categoriesList::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
+        .kanban-column {
+            min-height: 220px;
+        }
+        .kanban-card.dragging {
+            opacity: 0.6;
+        }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen font-sans">
+<body class="min-h-screen font-sans bg-slate-950 text-slate-100">
 
-    <div id="authSection" class="min-h-screen flex items-center justify-center">
-        <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-            <h2 class="text-3xl font-bold text-center text-gray-800 mb-6">Вход в систему</h2>
+    <!-- Background -->
+    <div id="bgLayer" class="fixed inset-0 -z-10">
+        <div class="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950"></div>
+        <div class="absolute inset-0 opacity-30 [background:radial-gradient(1200px_circle_at_20%_10%,rgba(59,130,246,0.35),transparent_55%),radial-gradient(900px_circle_at_80%_20%,rgba(139,92,246,0.30),transparent_55%),radial-gradient(900px_circle_at_40%_90%,rgba(34,197,94,0.18),transparent_55%)]"></div>
+        <div id="bgImage" class="absolute inset-0 bg-cover bg-center opacity-0 transition-opacity duration-500"></div>
+    </div>
+
+    <div id="authSection" class="min-h-screen flex items-center justify-center px-4">
+        <div class="bg-white/5 backdrop-blur border border-white/10 p-8 rounded-2xl shadow-2xl w-full max-w-md">
+            <h2 class="text-3xl font-extrabold text-center text-white mb-2">Добро пожаловать</h2>
+            <p class="text-center text-sm text-slate-300 mb-6">Войдите или зарегистрируйтесь, чтобы управлять проектами</p>
             
             <form id="authForm" class="space-y-5">
                 <div>
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Email</label>
-                    <input type="email" id="email" required class="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none transition">
+                    <label class="block text-slate-200 text-sm font-bold mb-2">Email</label>
+                    <input type="email" id="email" required class="w-full p-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-white placeholder:text-slate-400">
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Пароль</label>
-                    <input type="password" id="password" required class="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none transition">
+                    <label class="block text-slate-200 text-sm font-bold mb-2">Пароль</label>
+                    <input type="password" id="password" required class="w-full p-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-white placeholder:text-slate-400">
                 </div>
                 
                 <div>
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Роль (для регистрации)</label>
-                    <select id="role" class="w-full p-3 border border-gray-300 rounded bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <label class="block text-slate-200 text-sm font-bold mb-2">Роль (для регистрации)</label>
+                    <select id="role" class="w-full p-3 border border-white/10 rounded-xl bg-white/5 focus:ring-2 focus:ring-blue-500 outline-none text-white">
                         <option value="user">User (Только просмотр)</option>
                         <option value="admin">Admin (Полный доступ)</option>
                     </select>
                 </div>
 
                 <div class="flex gap-4 pt-2">
-                    <button type="button" onclick="handleAuth('login')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded transition shadow-md">
+                    <button type="button" onclick="handleAuth('login')" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition shadow-md shadow-blue-600/20">
                         Войти
                     </button>
-                    <button type="button" onclick="handleAuth('register')" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded transition shadow-md">
+                    <button type="button" onclick="handleAuth('register')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl transition shadow-md shadow-emerald-600/20">
                         Регистрация
                     </button>
                 </div>
@@ -49,123 +63,118 @@
         </div>
     </div>
 
-    <div id="dashboardSection" class="hidden p-6 md:p-10 max-w-7xl mx-auto">
+    <div id="dashboardSection" class="hidden p-5 md:p-10 max-w-7xl mx-auto">
         
-        <div class="flex flex-col md:flex-row justify-between items-center mb-10 border-b-2 border-blue-500 pb-4">
-            <h1 class="text-3xl md:text-4xl font-extrabold text-gray-800">
-                Управление <span class="text-blue-600">Проектами</span>
-            </h1>
-            <div class="flex items-center gap-4 mt-4 md:mt-0">
-                <span class="text-gray-500 text-sm" id="userRoleDisplay"></span>
-                <button onclick="logout()" class="bg-red-50 text-red-600 px-4 py-2 rounded border border-red-200 hover:bg-red-100 transition font-medium">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+            <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center font-black text-lg">PM</div>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-extrabold text-white">Project Manager</h1>
+                    <p class="text-xs text-slate-400">Final Project • JWT • RBAC • Kanban • Analytics</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 mt-4 md:mt-0">
+                <span class="text-slate-300 text-sm" id="userRoleDisplay"></span>
+                <button onclick="logout()" class="bg-white/5 text-white px-4 py-2 rounded-xl border border-white/10 hover:bg-white/10 transition font-medium">
                     Выйти
                 </button>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            <div class="lg:col-span-1 space-y-8">
+        <!-- Top navigation -->
+        <div class="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-2 mb-6 flex flex-wrap gap-2">
+            <button class="navBtn px-4 py-2 rounded-xl text-sm font-semibold bg-white/10 hover:bg-white/15 transition" data-route="#/projects">Projects</button>
+            <button class="navBtn px-4 py-2 rounded-xl text-sm font-semibold bg-white/5 hover:bg-white/10 transition" data-route="#/my-projects">My</button>
+            <button class="navBtn px-4 py-2 rounded-xl text-sm font-semibold bg-white/5 hover:bg-white/10 transition" data-route="#/create">Create</button>
+            <button class="navBtn px-4 py-2 rounded-xl text-sm font-semibold bg-white/5 hover:bg-white/10 transition" data-route="#/kanban">Kanban</button>
+            <button class="navBtn px-4 py-2 rounded-xl text-sm font-semibold bg-white/5 hover:bg-white/10 transition" data-route="#/analytics">Analytics</button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-1 space-y-6">
                 
-                <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-purple-500">
-                    <h2 class="text-xl font-bold mb-4 text-gray-800 flex items-center gap-2">
-                        <span class="text-purple-500">📂</span> Категории
+                <div class="bg-white/5 backdrop-blur border border-white/10 p-6 rounded-2xl shadow-2xl">
+                    <h2 class="text-lg font-bold mb-4 text-white flex items-center gap-2">
+                        <span class="text-purple-300">Категории</span>
                     </h2>
                     
                     <form id="categoryForm" class="flex gap-2 mb-6">
-                        <input type="text" id="catName" required placeholder="Название..." class="flex-1 p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-400 outline-none text-sm">
-                        <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 font-bold text-xl leading-none shadow transition">
+                        <input type="text" id="catName" required placeholder="Название..." class="flex-1 p-2 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-purple-400 outline-none text-sm text-white placeholder:text-slate-400">
+                        <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded-xl hover:bg-purple-500 font-bold text-xl leading-none shadow transition">
                             +
                         </button>
                     </form>
 
                     <div>
-                        <h3 class="text-xs font-bold text-gray-400 uppercase mb-2 tracking-wider">Список категорий:</h3>
+                        <h3 class="text-xs font-bold text-slate-400 uppercase mb-2 tracking-wider">Список категорий:</h3>
                         <ul id="categoriesList" class="space-y-2 max-h-48 overflow-y-auto pr-1">
                             <li class="text-sm text-gray-400 italic">Загрузка...</li>
                         </ul>
                     </div>
                 </div>
 
-                <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-blue-500">
-                    <h2 class="text-xl font-bold mb-4 text-gray-800 flex items-center gap-2">
-                        <span class="text-blue-500">🚀</span> Новый Проект
-                    </h2>
-                    <form id="projectForm" class="space-y-4">
-                        <div>
-                            <input type="text" id="title" required placeholder="Название проекта" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-400 outline-none">
-                        </div>
-                        <div>
-                            <select id="categorySelect" class="w-full p-2 border border-gray-300 rounded bg-white focus:ring-2 focus:ring-blue-400 outline-none">
-                                <option value="">Без категории</option>
-                            </select>
-                        </div>
-                        <div>
-                            <textarea id="description" required placeholder="Описание задачи..." rows="3" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-400 outline-none"></textarea>
-                        </div>
-                        <div class="relative">
-                            <span class="absolute left-3 top-2 text-gray-400">$</span>
-                            <input type="number" id="budget" required placeholder="Бюджет" class="w-full p-2 pl-6 border border-gray-300 rounded focus:ring-2 focus:ring-blue-400 outline-none">
-                        </div>
-                        <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 rounded hover:bg-blue-700 transition shadow">
-                            Создать Проект
-                        </button>
-                    </form>
-                </div>
+                <!-- Create moved to its own page -->
             </div>
 
+            <!-- Main content pages -->
             <div class="lg:col-span-2">
-                <div class="bg-white p-6 rounded-xl shadow-md min-h-[500px]">
-                    <h2 class="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">Все Проекты</h2>
-                    <div id="projectsList" class="space-y-4">
-                        <p class="text-gray-500 italic text-center mt-10">Загрузка данных...</p>
-                    </div>
-                </div>
+                <div id="pageContainer" class="space-y-6"></div>
             </div>
         </div>
     </div>
 
     <script>
-        const API_URL = 'http://localhost:3000';
+        // Auto-detect API URL: use current origin in production, localhost in development
+        const API_URL = window.location.origin === 'http://localhost:3000' || window.location.origin.includes('localhost') 
+            ? 'http://localhost:3000' 
+            : window.location.origin;
         let token = localStorage.getItem('token');
 
-        // === 1. УПРАВЛЕНИЕ ИНТЕРФЕЙСОМ (Auth Check) ===
-        function checkAuth() {
-            if (token) {
-                // Если вошли
-                document.getElementById('authSection').classList.add('hidden');
-                document.getElementById('dashboardSection').classList.remove('hidden');
-                
-                // Декодируем роль (просто для отображения UI)
-                try {
-                    const payload = JSON.parse(atob(token.split('.')[1]));
-                    document.getElementById('userRoleDisplay').innerText = `Вы вошли как: ${payload.role.toUpperCase()}`;
-                } catch(e) {}
+        const state = {
+            categories: [],
+            projects: [],
+            analytics: null,
+            user: { role: null, userId: null }
+        };
 
-                fetchCategories();
-                fetchProjects();
-            } else {
-                // Если вышли
-                document.getElementById('authSection').classList.remove('hidden');
-                document.getElementById('dashboardSection').classList.add('hidden');
+        function parseJwt(jwt) {
+            try {
+                const payload = JSON.parse(atob(jwt.split('.')[1]));
+                return payload;
+            } catch {
+                return null;
             }
         }
 
-        function logout() {
-            localStorage.removeItem('token');
-            token = null;
-            checkAuth();
+        function isAdmin() {
+            return state.user?.role === 'admin';
         }
 
-        // Вспомогательная функция для заголовков с токеном
         function getHeaders() {
             return {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}` 
+                'Authorization': `Bearer ${token}`
             };
         }
 
-        // === 2. ЛОГИН И РЕГИСТРАЦИЯ ===
+        function showAuth() {
+            document.getElementById('authSection').classList.remove('hidden');
+            document.getElementById('dashboardSection').classList.add('hidden');
+        }
+
+        function showDashboard() {
+            document.getElementById('authSection').classList.add('hidden');
+            document.getElementById('dashboardSection').classList.remove('hidden');
+        }
+
+        function setActiveNav(route) {
+            document.querySelectorAll('.navBtn').forEach(btn => {
+                const isActive = btn.dataset.route === route;
+                btn.classList.toggle('bg-white/10', isActive);
+                btn.classList.toggle('bg-white/5', !isActive);
+            });
+        }
+
         async function handleAuth(type) {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
@@ -182,56 +191,71 @@
                     body: JSON.stringify(body)
                 });
                 const data = await res.json();
-
-                if (!res.ok) throw new Error(data.message);
+                if (!res.ok) throw new Error(data.message || 'Auth error');
 
                 if (type === 'login') {
                     token = data.token;
                     localStorage.setItem('token', token);
                     msg.innerText = "";
-                    checkAuth();
+                    await bootstrap();
                 } else {
-                    msg.className = "text-center mt-4 text-sm font-medium text-green-600";
+                    msg.className = "text-center mt-4 text-sm font-medium text-emerald-400";
                     msg.innerText = "Регистрация успешна! Теперь войдите.";
                 }
             } catch (err) {
-                msg.className = "text-center mt-4 text-sm font-medium text-red-500";
+                msg.className = "text-center mt-4 text-sm font-medium text-red-400";
                 msg.innerText = err.message;
             }
         }
 
-        // === 3. РАБОТА С КАТЕГОРИЯМИ (GET, POST, DELETE) ===
-        async function fetchCategories() {
-            try {
-                // GET запрос (открыт для всех)
-                const res = await fetch(`${API_URL}/categories`);
-                const categories = await res.json();
-                
-                // А. Обновляем выпадающий список в форме Проекта
-                const select = document.getElementById('categorySelect');
-                select.innerHTML = '<option value="">Без категории</option>' + 
-                    categories.map(c => `<option value="${c._id}">${c.name}</option>`).join('');
-
-                // Б. Обновляем список для удаления (левая колонка)
-                const list = document.getElementById('categoriesList');
-                if (categories.length === 0) {
-                    list.innerHTML = '<li class="text-sm text-gray-400 py-2">Нет категорий</li>';
-                } else {
-                    list.innerHTML = categories.map(c => `
-                        <li class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-200 hover:bg-gray-100 transition">
-                            <span class="text-gray-700 text-sm font-medium">${c.name}</span>
-                            <button onclick="deleteCategory('${c._id}')" class="text-gray-400 hover:text-red-600 font-bold px-2 text-lg leading-none transition" title="Удалить">
-                                &times;
-                            </button>
-                        </li>
-                    `).join('');
-                }
-            } catch (err) {
-                console.error("Ошибка получения категорий", err);
-            }
+        function logout() {
+            localStorage.removeItem('token');
+            token = null;
+            state.categories = [];
+            state.projects = [];
+            state.analytics = null;
+            state.user = { role: null, userId: null };
+            showAuth();
         }
 
-        // Создание категории (Нужен Admin)
+        async function fetchCategories() {
+            const res = await fetch(`${API_URL}/categories`);
+            const data = await res.json();
+            state.categories = Array.isArray(data) ? data : [];
+            renderCategoriesSidebar();
+        }
+
+        async function fetchProjects() {
+            const res = await fetch(`${API_URL}/projects`);
+            const data = await res.json();
+            state.projects = Array.isArray(data) ? data : [];
+        }
+
+        async function fetchAnalytics() {
+            const res = await fetch(`${API_URL}/projects/analytics/summary`);
+            const data = await res.json();
+            state.analytics = data;
+        }
+
+        function renderCategoriesSidebar() {
+            const list = document.getElementById('categoriesList');
+            if (!list) return;
+
+            if (!state.categories.length) {
+                list.innerHTML = '<li class="text-sm text-slate-400 py-2">Нет категорий</li>';
+                return;
+            }
+
+            list.innerHTML = state.categories.map(c => `
+                <li class="flex justify-between items-center bg-white/5 p-2 rounded-xl border border-white/10 hover:bg-white/10 transition">
+                    <span class="text-white text-sm font-medium">${c.name}</span>
+                    <button onclick="deleteCategory('${c._id}')" class="text-slate-400 hover:text-red-400 font-bold px-2 text-lg leading-none transition" title="Удалить">
+                        &times;
+                    </button>
+                </li>
+            `).join('');
+        }
+
         document.getElementById('categoryForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const nameInput = document.getElementById('catName');
@@ -241,131 +265,678 @@
                     headers: getHeaders(),
                     body: JSON.stringify({ name: nameInput.value })
                 });
-                if (!res.ok) throw new Error('Ошибка: Только Админ может создавать категории!');
-                
-                nameInput.value = ''; // Очистка
-                fetchCategories(); // Обновление списков
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Только админ может создавать категории');
+                nameInput.value = '';
+                await fetchCategories();
+                await refreshDataForCurrentRoute();
             } catch (err) {
                 alert(err.message);
             }
         });
 
-        // Удаление категории (Нужен Admin)
         async function deleteCategory(id) {
-            if (!confirm('Удалить эту категорию?')) return;
             try {
                 const res = await fetch(`${API_URL}/categories/${id}`, {
                     method: 'DELETE',
                     headers: getHeaders()
                 });
-                if (!res.ok) throw new Error('Ошибка: Только Админ может удалять категории!');
-                
-                fetchCategories();
-                fetchProjects(); // Обновляем проекты, чтобы убрать удаленную категорию из бейджей
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Только админ может удалять категории');
+                await fetchCategories();
+                await fetchProjects();
+                route();
             } catch (err) {
                 alert(err.message);
             }
         }
 
-        // === 4. РАБОТА С ПРОЕКТАМИ (GET, POST, DELETE) ===
-        async function fetchProjects() {
+        function formatDeadline(dateStr) {
+            if (!dateStr) return 'Без дедлайна';
+            const d = new Date(dateStr);
+            if (Number.isNaN(d.getTime())) return 'Без дедлайна';
+            return d.toLocaleDateString();
+        }
+
+        function isUrgent(deadlineStr, status) {
+            if (!deadlineStr || status === 'done') return false;
+            const d = new Date(deadlineStr);
+            if (Number.isNaN(d.getTime())) return false;
+            return (d - new Date()) <= 24 * 60 * 60 * 1000;
+        }
+
+        function pageWrap(title, subtitle, innerHtml) {
+            return `
+                <div class="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-6 shadow-2xl">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <h2 class="text-xl md:text-2xl font-extrabold text-white">${title}</h2>
+                            ${subtitle ? `<p class="text-sm text-slate-400 mt-1">${subtitle}</p>` : ''}
+                        </div>
+                        <div class="text-xs text-slate-500">${isAdmin() ? 'Admin' : 'User'}</div>
+                    </div>
+                    <div class="mt-6">${innerHtml}</div>
+                </div>
+            `;
+        }
+
+        function calcProgress(project) {
+            const todos = project.todos || [];
+            const total = todos.length;
+            if (!total) return 0;
+            const done = todos.filter(t => t.done).length;
+            return Math.round((done / total) * 100);
+        }
+
+        function renderProjectsPage() {
+            const items = state.projects.map(p => {
+                const catName = p.category?.name || 'Без категории';
+                const progress = calcProgress(p);
+                const canEdit = isAdmin() || (state.user?.userId && p.owner === state.user.userId);
+                return `
+                    <div class="bg-white/5 border border-white/10 rounded-2xl p-4 hover:bg-white/10 transition">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <a href="#/project/${p._id}" class="text-white font-bold hover:underline">${p.title}</a>
+                                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-slate-200">${catName}</span>
+                                </div>
+                                <p class="text-sm text-slate-300 mt-1 line-clamp-2">${p.description}</p>
+                                <div class="mt-2 flex flex-wrap gap-2 text-xs text-slate-400 items-center">
+                                    <span class="px-2 py-1 rounded-xl bg-white/5 border border-white/10">Status: ${p.status || 'backlog'}</span>
+                                    <span class="px-2 py-1 rounded-xl bg-white/5 border border-white/10">Deadline: ${formatDeadline(p.deadline)}</span>
+                                    <span class="px-2 py-1 rounded-xl bg-emerald-500/10 border border-emerald-400/40 text-emerald-300">Progress: ${progress}%</span>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-emerald-300 font-extrabold">$${p.budget}</div>
+                                ${canEdit ? `<button onclick="deleteProject('${p._id}')" class="mt-2 text-xs text-red-300 hover:text-red-200">Delete</button>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            return pageWrap(
+                'Projects',
+                'Список всех проектов. Нажми на проект, чтобы открыть детали (todo‑лист, комментарии и т.д.)',
+                `
+                    <div class="flex items-center justify-between gap-3 mb-4">
+                        <div class="text-sm text-slate-400">Всего: ${state.projects.length}</div>
+                        <a href="#/create" class="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 transition text-sm font-semibold">+ Create project</a>
+                    </div>
+                    <div class="space-y-3">
+                        ${items || `<div class="text-slate-400 text-sm">Проектов пока нет.</div>`}
+                    </div>
+                `
+            );
+        }
+
+        function renderMyProjectsPage() {
+            const my = state.projects.filter(p => state.user?.userId && p.owner === state.user.userId);
+            const items = my.map(p => {
+                const catName = p.category?.name || 'Без категории';
+                const progress = calcProgress(p);
+                return `
+                    <div class="bg-white/5 border border-white/10 rounded-2xl p-4 hover:bg-white/10 transition">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <a href="#/project/${p._id}" class="text-white font-bold hover:underline">${p.title}</a>
+                                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-slate-200">${catName}</span>
+                                </div>
+                                <p class="text-sm text-slate-300 mt-1 line-clamp-2">${p.description}</p>
+                                <div class="mt-2 flex flex-wrap gap-2 text-xs text-slate-400 items-center">
+                                    <span class="px-2 py-1 rounded-xl bg-white/5 border border-white/10">Status: ${p.status || 'backlog'}</span>
+                                    <span class="px-2 py-1 rounded-xl bg-white/5 border border-white/10">Deadline: ${formatDeadline(p.deadline)}</span>
+                                    <span class="px-2 py-1 rounded-xl bg-emerald-500/10 border border-emerald-400/40 text-emerald-300">Progress: ${progress}%</span>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-emerald-300 font-extrabold">$${p.budget}</div>
+                                <button onclick="deleteProject('${p._id}')" class="mt-2 text-xs text-red-300 hover:text-red-200">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            return pageWrap(
+                'My Projects',
+                'Проекты, владельцем которых является текущий пользователь.',
+                `
+                    <div class="flex items-center justify-between gap-3 mb-4">
+                        <div class="text-sm text-slate-400">Всего: ${my.length}</div>
+                        <a href="#/create" class="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 transition text-sm font-semibold">+ Create project</a>
+                    </div>
+                    <div class="space-y-3">
+                        ${items || `<div class="text-slate-400 text-sm">У вас пока нет собственных проектов.</div>`}
+                    </div>
+                `
+            );
+        }
+
+        function renderCreatePage() {
+            const options = [`<option value="">Без категории</option>`]
+                .concat(state.categories.map(c => `<option value="${c._id}">${c.name}</option>`))
+                .join('');
+
+            return pageWrap(
+                'Create Project',
+                'Любой авторизованный пользователь может создавать собственные проекты.',
+                `
+                    <form id="createProjectForm" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-sm font-bold text-slate-200">Название</label>
+                                <input id="createTitle" required class="mt-1 w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-500" placeholder="Например: Landing page redesign">
+                            </div>
+                            <div>
+                                <label class="text-sm font-bold text-slate-200">Категория</label>
+                                <select id="createCategory" class="mt-1 w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                    ${options}
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-sm font-bold text-slate-200">Описание</label>
+                            <textarea id="createDescription" required rows="4" class="mt-1 w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-500" placeholder="Что нужно сделать?"></textarea>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="text-sm font-bold text-slate-200">Бюджет</label>
+                                <input id="createBudget" type="number" required class="mt-1 w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-500" placeholder="1000">
+                            </div>
+                            <div>
+                                <label class="text-sm font-bold text-slate-200">Дедлайн</label>
+                                <input id="createDeadline" type="date" class="mt-1 w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between pt-2">
+                            <a href="#/projects" class="text-sm text-slate-300 hover:text-white">← Back</a>
+                            <button type="submit" class="px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 transition text-sm font-semibold">
+                                Create
+                            </button>
+                        </div>
+                    </form>
+                `
+            );
+        }
+
+        function renderKanbanPage() {
+            const col = (key, title, accent) => `
+                <div class="bg-white/5 rounded-2xl p-3 border border-white/10">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-semibold ${accent}">${title}</span>
+                        <span id="count-${key}" class="text-xs text-slate-400">0</span>
+                    </div>
+                    <div id="column-${key}" class="kanban-column space-y-3" data-status="${key}"></div>
+                </div>
+            `;
+
+            return pageWrap(
+                'Kanban',
+                isAdmin() ? 'Drag-and-drop доступен админу.' : 'Перетаскивание доступно только админу (RBAC).',
+                `
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                        ${col('backlog', 'Backlog', 'text-slate-100')}
+                        ${col('in_progress', 'In Progress', 'text-blue-300')}
+                        ${col('review', 'Review', 'text-amber-300')}
+                        ${col('done', 'Done', 'text-emerald-300')}
+                    </div>
+                `
+            );
+        }
+
+        function renderAnalyticsPage() {
+            return pageWrap(
+                'Analytics',
+                'Красивые графики для защиты: бюджеты по категориям и проекты по статусам.',
+                `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white/5 border border-white/10 rounded-2xl p-4">
+                            <h3 class="text-sm font-semibold text-slate-200 mb-2">Бюджет по категориям</h3>
+                            <canvas id="budgetByCategoryChart" height="220"></canvas>
+                        </div>
+                        <div class="bg-white/5 border border-white/10 rounded-2xl p-4">
+                            <h3 class="text-sm font-semibold text-slate-200 mb-2">Проекты по статусам</h3>
+                            <canvas id="projectsByStatusChart" height="220"></canvas>
+                            <p id="completedThisWeek" class="mt-4 text-xs text-slate-400"></p>
+                        </div>
+                    </div>
+                `
+            );
+        }
+
+        function renderProjectDetailPage(project) {
+            if (!project) {
+                return pageWrap('Project', 'Не найдено', `<a href="#/projects" class="text-slate-300 hover:text-white">← Back</a>`);
+            }
+
+            const catName = project.category?.name || 'Без категории';
+            const urgent = isUrgent(project.deadline, project.status) ? 'border-red-400 bg-red-500/10' : 'border-white/10 bg-white/5';
+            const canEdit = isAdmin() || (state.user?.userId && project.owner === state.user.userId);
+
+            const progress = calcProgress(project);
+            const todos = (project.todos || []).map(t => `
+                <div class="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl p-3">
+                    <input type="checkbox" ${t.done ? 'checked' : ''} ${canEdit ? '' : 'disabled'} onchange="${canEdit ? `toggleTodo('${project._id}', '${t._id}', this.checked)` : ''}" class="h-4 w-4">
+                    <div class="flex-1">
+                        <div class="text-sm ${t.done ? 'line-through text-slate-500' : 'text-white'}">${t.text}</div>
+                        <div class="text-[10px] text-slate-500">${new Date(t.createdAt).toLocaleString()}</div>
+                    </div>
+                    ${canEdit ? `<button onclick="deleteTodo('${project._id}', '${t._id}')" class="text-xs text-red-300 hover:text-red-200">Delete</button>` : ''}
+                </div>
+            `).join('');
+
+            const comments = (project.comments || []).map(c => `
+                <div class="bg-white/5 border border-white/10 rounded-2xl p-3">
+                    <div class="text-xs text-slate-400">${c.user?.email || 'User'} • ${new Date(c.createdAt).toLocaleString()}</div>
+                    <div class="text-sm text-white mt-1">${c.text}</div>
+                </div>
+            `).join('');
+
+            return pageWrap(
+                project.title,
+                `${catName} • Status: ${project.status} • Deadline: ${formatDeadline(project.deadline)}`,
+                `
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 space-y-6">
+                            <div class="${urgent} border rounded-2xl p-4">
+                                <h3 class="font-bold text-white mb-2">Описание</h3>
+                                <p class="text-slate-200 text-sm leading-relaxed">${project.description}</p>
+                                <div class="mt-3 flex items-center justify-between">
+                                    <div class="text-emerald-300 font-extrabold">$${project.budget}</div>
+                                    ${canEdit ? `<button onclick="deleteProject('${project._id}')" class="text-sm text-red-300 hover:text-red-200">Delete project</button>` : ''}
+                                </div>
+                            </div>
+
+                            <div class="bg-white/5 border border-white/10 rounded-2xl p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div>
+                                        <h3 class="font-bold text-white">Todo list</h3>
+                                        <span class="text-xs text-slate-400">${(project.todos || []).filter(t => t.done).length}/${(project.todos || []).length} done</span>
+                                    </div>
+                                    <div class="text-xs text-emerald-300 font-semibold">${progress}%</div>
+                                </div>
+                                <div class="w-full h-2 rounded-full bg-white/10 mb-3 overflow-hidden">
+                                    <div class="h-2 bg-emerald-400" style="width:${progress}%;"></div>
+                                </div>
+                                ${canEdit ? `
+                                    <form id="todoForm" class="flex gap-2 mb-4">
+                                        <input id="todoText" placeholder="Добавить задачу..." class="flex-1 p-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-500">
+                                        <button class="px-4 rounded-xl bg-blue-600 hover:bg-blue-500 transition font-semibold">Add</button>
+                                    </form>
+                                ` : '<p class="text-xs text-slate-400 mb-4">Вы можете просматривать задачи, но редактировать может только владелец проекта или админ.</p>'}
+                                <div class="space-y-2">
+                                    ${todos || `<div class="text-sm text-slate-400">Пока задач нет.</div>`}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-6">
+                            <div class="bg-white/5 border border-white/10 rounded-2xl p-4">
+                                <h3 class="font-bold text-white mb-3">Комментарии</h3>
+                                <form id="commentForm" class="space-y-2 mb-4">
+                                    <textarea id="commentText" rows="3" class="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-500" placeholder="Написать комментарий..."></textarea>
+                                    <button class="w-full px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 transition font-semibold">Send</button>
+                                </form>
+                                <div class="space-y-2 max-h-80 overflow-auto pr-1">
+                                    ${comments || `<div class="text-sm text-slate-400">Комментариев пока нет.</div>`}
+                                </div>
+                            </div>
+
+                            <a href="#/projects" class="block text-sm text-slate-300 hover:text-white">← Back to Projects</a>
+                        </div>
+                    </div>
+                `
+            );
+        }
+
+        async function deleteProject(id) {
             try {
-                const res = await fetch(`${API_URL}/projects`);
-                const projects = await res.json();
-                renderProjects(projects);
+                const res = await fetch(`${API_URL}/projects/${id}`, {
+                    method: 'DELETE',
+                    headers: getHeaders()
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Только админ может удалять проекты');
+                await fetchProjects();
+                window.location.hash = '#/projects';
             } catch (err) {
-                console.error("Ошибка проектов", err);
+                alert(err.message);
             }
         }
 
-        function renderProjects(projects) {
-            const list = document.getElementById('projectsList');
-            if (projects.length === 0) {
-                list.innerHTML = `
-                    <div class="flex flex-col items-center justify-center h-40 text-gray-400">
-                        <span class="text-4xl mb-2">📭</span>
-                        <p>Проектов пока нет</p>
-                    </div>`;
+        async function changeStatus(projectId, status) {
+            const res = await fetch(`${API_URL}/projects/${projectId}/status`, {
+                method: 'PATCH',
+                headers: getHeaders(),
+                body: JSON.stringify({ status })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || 'Только админ может менять статус');
+            return data;
+        }
+
+        function renderKanbanColumns(projects) {
+            const columns = {
+                backlog: document.getElementById('column-backlog'),
+                in_progress: document.getElementById('column-in_progress'),
+                review: document.getElementById('column-review'),
+                done: document.getElementById('column-done')
+            };
+            Object.values(columns).forEach(c => c && (c.innerHTML = ''));
+            const counts = { backlog: 0, in_progress: 0, review: 0, done: 0 };
+
+            projects.forEach(p => {
+                const status = p.status || 'backlog';
+                const column = columns[status];
+                if (!column) return;
+                counts[status]++;
+
+                const catName = p.category?.name || 'Без категории';
+                const urgent = isUrgent(p.deadline, status);
+                const card = document.createElement('div');
+                card.className = `kanban-card border rounded-2xl p-3 transition relative group ${urgent ? 'border-red-400 bg-red-500/10' : 'border-white/10 bg-white/5 hover:bg-white/10'}`;
+                card.draggable = isAdmin();
+                card.dataset.id = p._id;
+                card.innerHTML = `
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <a href="#/project/${p._id}" class="text-white font-semibold hover:underline">${p.title}</a>
+                            <div class="mt-1 text-[10px] text-slate-400">${catName} • ${formatDeadline(p.deadline)}</div>
+                        </div>
+                        <div class="text-emerald-300 font-extrabold text-xs">$${p.budget}</div>
+                    </div>
+                `;
+
+                if (isAdmin()) {
+                    card.addEventListener('dragstart', (e) => {
+                        card.classList.add('dragging');
+                        e.dataTransfer.setData('text/plain', p._id);
+                    });
+                    card.addEventListener('dragend', () => card.classList.remove('dragging'));
+                }
+                column.appendChild(card);
+            });
+
+            ['backlog', 'in_progress', 'review', 'done'].forEach(k => {
+                const el = document.getElementById(`count-${k}`);
+                if (el) el.innerText = counts[k];
+            });
+
+            document.querySelectorAll('.kanban-column').forEach(col => {
+                col.addEventListener('dragover', (e) => isAdmin() && e.preventDefault());
+                col.addEventListener('drop', async (e) => {
+                    if (!isAdmin()) return;
+                    e.preventDefault();
+                    const projectId = e.dataTransfer.getData('text/plain');
+                    const newStatus = col.dataset.status;
+                    try {
+                        await changeStatus(projectId, newStatus);
+                        await refreshDataForCurrentRoute();
+                    } catch (err) {
+                        alert(err.message);
+                    }
+                });
+            });
+        }
+
+        let budgetChart;
+        let statusChart;
+
+        function renderAnalyticsCharts() {
+            const data = state.analytics;
+            if (!data) return;
+            const { byStatus, byCategory, completedThisWeek } = data;
+
+            const budgetEl = document.getElementById('budgetByCategoryChart');
+            const statusEl = document.getElementById('projectsByStatusChart');
+            if (!budgetEl || !statusEl) return;
+
+            const ctxBudget = budgetEl.getContext('2d');
+            const ctxStatus = statusEl.getContext('2d');
+
+            const categoryLabels = (byCategory || []).map(c => c.name || 'Без категории');
+            const categoryBudgets = (byCategory || []).map(c => c.totalBudget);
+
+            if (budgetChart) budgetChart.destroy();
+            budgetChart = new Chart(ctxBudget, {
+                type: 'pie',
+                data: {
+                    labels: categoryLabels,
+                    datasets: [{
+                        data: categoryBudgets,
+                        backgroundColor: ['#3b82f6','#8b5cf6','#22c55e','#f97316','#ef4444','#14b8a6']
+                    }]
+                },
+                options: {
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#cbd5e1' } }
+                    }
+                }
+            });
+
+            const statusLabels = ['backlog','in_progress','review','done'];
+            const statusNames = ['Backlog','In Progress','Review','Done'];
+            const statusCounts = statusLabels.map(s => byStatus?.[s] || 0);
+
+            if (statusChart) statusChart.destroy();
+            statusChart = new Chart(ctxStatus, {
+                type: 'bar',
+                data: {
+                    labels: statusNames,
+                    datasets: [{
+                        data: statusCounts,
+                        backgroundColor: ['#64748b','#3b82f6','#f59e0b','#22c55e']
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: { beginAtZero: true, ticks: { precision: 0, color: '#cbd5e1' }, grid: { color: 'rgba(148,163,184,0.15)' } },
+                        x: { ticks: { color: '#cbd5e1' }, grid: { color: 'rgba(148,163,184,0.10)' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            const text = completedThisWeek
+                ? `За последние 7 дней завершено проектов: ${completedThisWeek}`
+                : 'За последние 7 дней завершённых проектов нет или данных недостаточно.';
+            const completedEl = document.getElementById('completedThisWeek');
+            if (completedEl) completedEl.innerText = text;
+        }
+
+        function route() {
+            const hash = window.location.hash || '#/projects';
+            const container = document.getElementById('pageContainer');
+            if (!container) return;
+
+            const [_, root, id] = hash.split('/');
+            const routeKey = `#/${root || 'projects'}`;
+
+            setActiveNav(routeKey);
+
+            if (root === 'create') {
+                container.innerHTML = renderCreatePage();
+                const form = document.getElementById('createProjectForm');
+                form?.addEventListener('submit', onCreateProjectSubmit);
                 return;
             }
 
-            list.innerHTML = projects.map(p => {
-                const catName = p.category ? p.category.name : 'Без категории';
-                // Разные цвета для категорий
-                const catStyle = p.category 
-                    ? 'bg-purple-100 text-purple-700 border-purple-200' 
-                    : 'bg-gray-100 text-gray-500 border-gray-200';
+            if (root === 'kanban') {
+                container.innerHTML = renderKanbanPage();
+                renderKanbanColumns(state.projects);
+                return;
+            }
 
-                return `
-                <div class="bg-gray-50 border border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition relative group">
-                    <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <div class="flex items-center gap-3 mb-1">
-                                <h3 class="font-bold text-lg text-gray-800">${p.title}</h3>
-                                <span class="text-xs font-semibold px-2 py-0.5 rounded border ${catStyle}">
-                                    ${catName}
-                                </span>
-                            </div>
-                            <p class="text-gray-600 text-sm leading-relaxed">${p.description}</p>
-                        </div>
-                        <span class="text-sm font-bold text-green-700 bg-green-50 px-3 py-1 rounded-full border border-green-100">
-                            $${p.budget}
-                        </span>
-                    </div>
-                    
-                    <button onclick="deleteProject('${p._id}')" class="absolute top-4 right-4 text-gray-300 hover:text-red-500 transition font-bold p-1 rounded hover:bg-red-50" title="Удалить проект">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                    </button>
-                </div>
-                `;
-            }).join('');
+            if (root === 'analytics') {
+                container.innerHTML = renderAnalyticsPage();
+                renderAnalyticsCharts();
+                return;
+            }
+
+            if (root === 'my-projects') {
+                container.innerHTML = renderMyProjectsPage();
+                return;
+            }
+
+            if (root === 'project' && id) {
+                const project = state.projects.find(p => p._id === id);
+                container.innerHTML = renderProjectDetailPage(project);
+                document.getElementById('todoForm')?.addEventListener('submit', (e) => onAddTodo(e, id));
+                document.getElementById('commentForm')?.addEventListener('submit', (e) => onAddComment(e, id));
+                return;
+            }
+
+            container.innerHTML = renderProjectsPage();
         }
 
-        // Создание проекта (Нужен Admin)
-        document.getElementById('projectForm').addEventListener('submit', async (e) => {
+        async function onCreateProjectSubmit(e) {
             e.preventDefault();
-            const data = {
-                title: document.getElementById('title').value,
-                description: document.getElementById('description').value,
-                budget: document.getElementById('budget').value,
-                category: document.getElementById('categorySelect').value || null
+            const payload = {
+                title: document.getElementById('createTitle').value,
+                description: document.getElementById('createDescription').value,
+                budget: document.getElementById('createBudget').value,
+                category: document.getElementById('createCategory').value || null,
+                deadline: document.getElementById('createDeadline').value || null
             };
 
             try {
                 const res = await fetch(`${API_URL}/projects`, {
                     method: 'POST',
                     headers: getHeaders(),
-                    body: JSON.stringify(data)
+                    body: JSON.stringify(payload)
                 });
-                
-                if (!res.ok) throw new Error('Ошибка: Только Админ может создавать проекты!');
-                
-                e.target.reset();
-                fetchProjects();
-            } catch (err) {
-                alert(err.message);
-            }
-        });
-
-        // Удаление проекта (Нужен Admin)
-        async function deleteProject(id) {
-            if (!confirm('Удалить этот проект?')) return;
-            try {
-                const res = await fetch(`${API_URL}/projects/${id}`, {
-                    method: 'DELETE',
-                    headers: getHeaders()
-                });
-                if (!res.ok) throw new Error('Ошибка: Только Админ может удалять проекты!');
-                fetchProjects();
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Только админ может создавать проекты');
+                await fetchProjects();
+                await fetchAnalytics();
+                window.location.hash = `#/project/${data._id}`;
             } catch (err) {
                 alert(err.message);
             }
         }
 
-        // Инициализация при загрузке страницы
-        checkAuth();
+        async function onAddTodo(e, projectId) {
+            e.preventDefault();
+            const input = document.getElementById('todoText');
+            const text = (input?.value || '').trim();
+            if (!text) return;
+            try {
+                const res = await fetch(`${API_URL}/projects/${projectId}/todos`, {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify({ text })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Ошибка добавления задачи');
+                input.value = '';
+                await fetchProjects();
+                route();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function toggleTodo(projectId, todoId, done) {
+            try {
+                const res = await fetch(`${API_URL}/projects/${projectId}/todos/${todoId}`, {
+                    method: 'PATCH',
+                    headers: getHeaders(),
+                    body: JSON.stringify({ done })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Ошибка обновления задачи');
+                await fetchProjects();
+                route();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function deleteTodo(projectId, todoId) {
+            try {
+                const res = await fetch(`${API_URL}/projects/${projectId}/todos/${todoId}`, {
+                    method: 'DELETE',
+                    headers: getHeaders()
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Ошибка удаления задачи');
+                await fetchProjects();
+                route();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function onAddComment(e, projectId) {
+            e.preventDefault();
+            const input = document.getElementById('commentText');
+            const text = (input?.value || '').trim();
+            if (!text) return;
+            try {
+                const res = await fetch(`${API_URL}/projects/${projectId}/comments`, {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify({ text })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Ошибка комментария');
+                input.value = '';
+                await fetchProjects();
+                route();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function refreshDataForCurrentRoute() {
+            await fetchProjects();
+            const root = (window.location.hash || '').split('/')[1];
+            if (root === 'analytics') await fetchAnalytics();
+            route();
+        }
+
+        async function bootstrap() {
+            if (!token) return showAuth();
+
+            const payload = parseJwt(token);
+            if (!payload) return showAuth();
+            state.user = { role: payload.role, userId: payload.userId };
+            document.getElementById('userRoleDisplay').innerText = `Вы вошли как: ${payload.role.toUpperCase()}`;
+
+            showDashboard();
+
+            // Навигационные кнопки верхнего меню
+            document.querySelectorAll('.navBtn').forEach(btn => {
+                btn.onclick = () => {
+                    const route = btn.dataset.route || '#/projects';
+                    window.location.hash = route;
+                };
+            });
+
+            await fetchCategories();
+            await fetchProjects();
+            await fetchAnalytics();
+
+            if (!window.location.hash) window.location.hash = '#/projects';
+            route();
+        }
+
+        window.addEventListener('hashchange', () => {
+            route();
+            const root = (window.location.hash || '').split('/')[1];
+            if (root === 'analytics') {
+                fetchAnalytics().then(() => {
+                    state.analytics && renderAnalyticsCharts();
+                });
+            }
+        });
+
+        bootstrap();
     </script>
 </body>
 </html>
