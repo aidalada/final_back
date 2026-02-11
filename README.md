@@ -2,7 +2,7 @@
 
 A full-stack project management application built with Node.js, Express, MongoDB, and vanilla JavaScript. Features JWT authentication, Role-Based Access Control (RBAC), Kanban board, todo lists, analytics dashboard, and a modern dark-themed UI.
 
-## 🌟 Features
+## Features
 
 ### Core Functionality
 - **User Authentication**: JWT-based login/registration system
@@ -22,7 +22,7 @@ A full-stack project management application built with Node.js, Express, MongoDB
 - **Responsive Design**: Works seamlessly on desktop and mobile devices
 - **Modern UI**: Dark theme with gradient backgrounds
 
-## 🏗️ Architecture
+## Architecture
 
 The project follows **MVC (Model-View-Controller)** architecture:
 
@@ -36,13 +36,13 @@ backend_4/
 └── server.js        # Express server entry point
 ```
 
-## 📋 Prerequisites
+## Prerequisites
 
 - **Node.js** (v14 or higher)
 - **MongoDB** (local or MongoDB Atlas)
 - **npm** or **yarn**
 
-## 🚀 Local Setup
+## Local Setup
 
 ### 1. Clone the Repository
 
@@ -91,7 +91,7 @@ Open your browser and navigate to:
 http://localhost:3000
 ```
 
-## 🔐 User Roles & Permissions
+## User Roles & Permissions
 
 ### Admin
 - ✅ Create, update, and delete **all** projects
@@ -110,7 +110,7 @@ http://localhost:3000
 - ❌ Cannot change project status via Kanban
 - ❌ Cannot assign users to projects
 
-## 📡 API Documentation
+## API Documentation
 
 ### Base URL
 ```
@@ -318,7 +318,7 @@ Authorization: Bearer <token>
 ```
 **Access**: Admin only
 
-## 🌐 Deployment
+## Deployment
 
 ### Deploy to Render
 
@@ -368,7 +368,7 @@ Authorization: Bearer <token>
 
 Since the frontend is integrated (served via `express.static('public')`), it will be deployed automatically with the backend on Render. No separate deployment needed.
 
-## 📦 Project Structure
+## Project Structure
 
 ```
 backend_4/
@@ -395,7 +395,7 @@ backend_4/
 └── README.md                  # This file
 ```
 
-## 🧪 Testing with Postman
+## Testing with Postman
 
 A Postman collection is included in the repository (`postman_collection.json`). Import it into Postman to test all endpoints.
 
@@ -407,24 +407,20 @@ A Postman collection is included in the repository (`postman_collection.json`). 
    - `base_url`: `http://localhost:3000` (or your Render URL)
    - `token`: (will be set automatically after login)
 
-## 🔒 Security Features
+## Security Features
 
 - **Password Hashing**: bcryptjs with salt rounds
 - **JWT Tokens**: Secure token-based authentication
 - **RBAC**: Role-based access control for sensitive operations
 - **Input Validation**: Mongoose schema validation
 - **CORS**: Configured for cross-origin requests
-- **Environment Variables**: Sensitive data stored in `.env`
+- **Environment Variables**: Sensitive data stored in `.env
 
-## 📝 License
+## Author
 
-ISC
+Yerulan
 
-## 👤 Author
-
-Your Name
-
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Express.js
 - MongoDB & Mongoose
